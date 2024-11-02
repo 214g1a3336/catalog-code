@@ -1,0 +1,10 @@
+Secret for test case: 5
+Secret for test case: 128
+outputs represent the constant term c of the polynomial for each test case.
+
+Test Case 1:
+f(x) = 2x^2 + 3x + 5
+
+Test Case 2:
+f(x) = 23x^6 + 11x^5 + 17x^4 + 22x^3 + 128
+coefficients are determined up to modulo 256.
