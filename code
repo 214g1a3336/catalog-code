@@ -1,65 +1,69 @@
-Here's a Java solution using Lagrange interpolation to find the constant term c of the polynomial.
-
-
-import java.io.FileReader;
-import java.io.Reader;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import java.util.Map;
 
 public class ShamirSecretSharing {
+    
+    public static void main(String[] args) {
+        // Example JSON input
+        Map<String, Map<String, String>> input = Map.of(
+            "keys", Map.of("n", "4", "k", "3"),
+            "1", Map.of("base", "10", "value", "4"),
+            "2", Map.of("base", "2", "value", "111"),
+            "3", Map.of("base", "10", "value", "12"),
+            "6", Map.of("base", "4", "value", "213")
+        );
 
-    public static void main(String[] args) throws Exception {
-        String[] testCases = {
-            "{\"keys\": {\"n\": 4, \"k\": 3}, \"1\": {\"base\": \"10\", \"value\": \"4\"}, \"2\": {\"base\": \"2\", \"value\": \"111\"}, \"3\": {\"base\": \"10\", \"value\": \"12\"}, \"6\": {\"base\": \"4\", \"value\": \"213\"}}",
-            "{\"keys\": {\"n\": 10, \"k\": 7}, \"1\": {\"base\": \"6\", \"value\": \"13444211440455345511\"}, \"2\": {\"base\": \"15\", \"value\": \"aed7015a346d63\"}, \"3\": {\"base\": \"15\", \"value\": \"6aeeb69631c227c\"}, \"4\": {\"base\": \"16\", \"value\": \"e1b5e05623d881f\"}, \"5\": {\"base\": \"8\", \"value\": \"316034514573652620673\"}, \"6\": {\"base\": \"3\", \"value\": \"2122212201122002221120200210011020220200\"}, \"7\": {\"base\": \"3\", \"value\": \"20120221122211000100210021102001201112121\"}, \"8\": {\"base\": \"6\", \"value\": \"20220554335330240002224253\"}, \"9\": {\"base\": \"12\", \"value\": \"45153788322a1255483\"}, \"10\": {\"base\": \"7\", \"value\": \"1101613130313526312514143\"}}"
-        };
+        BigInteger secret = findConstantTerm(input);
+        System.out.println("The secret constant term is: " + secret);
+    }
 
-        for (String testCase : testCases) {
-            JSONObject jsonObject = new JSONObject(new JSONTokener(testCase));
-            int n = jsonObject.getJSONObject("keys").getInt("n");
-            int k = jsonObject.getJSONObject("keys").getInt("k");
+    public static BigInteger findConstantTerm(Map<String, Map<String, String>> input) {
+        int n = Integer.parseInt(input.get("keys").get("n"));
+        int k = Integer.parseInt(input.get("keys").get("k"));
 
-            List<Point> points = new ArrayList<>();
-            for (int i = 1; i <= n; i++) {
-                JSONObject pointJson = jsonObject.getJSONObject(String.valueOf(i));
-                int x = i;
-                long y = Long.parseLong(pointJson.getString("value"), pointJson.getInt("base"));
+        List<Point> points = new ArrayList<>();
+
+        // Parse and decode points
+        for (String key : input.keySet()) {
+            if (!key.equals("keys")) {
+                int x = Integer.parseInt(key);
+                int base = Integer.parseInt(input.get(key).get("base"));
+                String value = input.get(key).get("value");
+                
+                BigInteger y = new BigInteger(value, base);  // Decode y value from given base
                 points.add(new Point(x, y));
             }
-
-            long secret = findSecret(points, k - 1);
-            System.out.println("Secret for test case: " + secret);
         }
-    }
 
-    private static long findSecret(List<Point> points, int degree) {
-        long secret = 0;
-        for (int i = 0; i < points.size(); i++) {
-            Point point = points.get(i);
-            long numerator = 1;
-            long denominator = 1;
-            for (int j = 0; j < points.size(); j++) {
+        // Calculate the constant term (c) using Lagrange interpolation
+        BigInteger constantTerm = BigInteger.ZERO;
+        
+        for (int i = 0; i < k; i++) {
+            BigInteger xi = BigInteger.valueOf(points.get(i).x);
+            BigInteger yi = points.get(i).y;
+            BigInteger term = yi;
+
+            for (int j = 0; j < k; j++) {
                 if (i != j) {
-                    Point otherPoint = points.get(j);
-                    numerator *= -otherPoint.x;
-                    denominator *= point.x - otherPoint.x;
+                    BigInteger xj = BigInteger.valueOf(points.get(j).x);
+                    term = term.multiply(xj.negate()).divide(xi.subtract(xj));
                 }
             }
-            long coefficient = (numerator / denominator) % 256;
-            secret += coefficient * point.y;
+            
+            constantTerm = constantTerm.add(term);
         }
-        return secret % 256;
+        
+        return constantTerm;
     }
 
-    private static class Point {
+    // Helper class to store (x, y) points
+    static class Point {
         int x;
-        long y;
+        BigInteger y;
 
-        public Point(int x, long y) {
+        Point(int x, BigInteger y) {
             this.x = x;
             this.y = y;
         }
@@ -67,22 +71,6 @@ public class ShamirSecretSharing {
 }
 
 
-This Java program reads the test cases from JSON strings, parses them, and uses Lagrange interpolation to find the constant term c of the polynomial.
-
-Note:
-
-- This program assumes that the input JSON strings are well-formed and follow the specified format.
-- It uses the org.json library for JSON parsing.
-- The findSecret method calculates the constant term c using Lagrange interpolation.
-- The result is printed for each test case.
-
-You can modify the program to read the test cases from a file instead of hardcoded strings.
-
-To use this code, ensure you have the org.json library in your classpath. If you're using Maven, add this dependency to your pom.xml:
-
-
-<dependency>
-    <groupId>org.json</groupId>
-    <artifactId>json</artifactId>
-    <version>20210308</version>
-</dependency>
+            
+            
+   
